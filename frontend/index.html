@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emotion-Aware Study Companion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+
+    <div class="header">
+      <div class="header-icon">📚</div>
+      <div>
+        <h1>Study Companion</h1>
+        <p>Emotion-aware intelligent learning</p>
+      </div>
+    </div>
+
+    <div class="grid">
+
+      <!-- Left column -->
+      <div class="left-col">
+
+        <div class="card">
+          <div class="card-label">Topic</div>
+          <div class="topic-row">
+            <select id="topic" onchange="onTopicChange()">
+              <option>Introduction to AI</option>
+              <option>Machine Learning Basics</option>
+              <option>Neural Networks</option>
+              <option>Data Structures</option>
+            </select>
+            <button class="btn-primary" onclick="startLecture()">Start learning</button>
+          </div>
+        </div>
+
+        <div class="card video-card">
+          <div class="card-label">Lecture</div>
+          <div class="video-wrap">
+            <div class="video-placeholder" id="videoPlaceholder">
+              <div class="play-icon" onclick="startLecture()">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                  <path d="M5 3.5L14.5 9 5 14.5V3.5Z" fill="rgba(255,255,255,0.7)"/>
+                </svg>
+              </div>
+              <span class="video-label">Select a topic and press start</span>
+            </div>
+            <video id="lectureVideo" controls>
+              <source src="lecture.mp4" type="video/mp4">
+            </video>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right sidebar -->
+      <div class="sidebar">
+
+        <!-- Emotion Status -->
+        <div class="card">
+          <div class="card-label">Emotion status</div>
+          <div class="emotion-chip">
+            <div class="pulse" id="emotionPulse"></div>
+            <span id="emotionLabel">Detecting…</span>
+          </div>
+          <div class="state-row">
+            <span class="state-key">Learning state</span>
+            <span class="state-val" id="learningState">Waiting</span>
+          </div>
+          <div class="state-row">
+            <span class="state-key">Attention</span>
+            <span class="state-val" id="attention">—</span>
+          </div>
+          <div class="state-row">
+            <span class="state-key">Session</span>
+            <span class="state-val">
+              <span class="badge-status" id="sessionStatus">Idle</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Quiz -->
+        <div class="card">
+          <div class="card-label">Quick check</div>
+
+          <div id="quizTrigger">
+            <button class="show-quiz-btn" onclick="showQuiz()">Launch quiz for this topic →</button>
+          </div>
+
+          <div class="quiz-section" id="quizSection">
+            <p class="quiz-q" id="question"></p>
+            <div class="quiz-options">
+              <button class="quiz-btn" id="A" onclick="answer('A')">
+                <span class="opt-label">A</span><span class="opt-text" id="textA"></span>
+              </button>
+              <button class="quiz-btn" id="B" onclick="answer('B')">
+                <span class="opt-label">B</span><span class="opt-text" id="textB"></span>
+              </button>
+              <button class="quiz-btn" id="C" onclick="answer('C')">
+                <span class="opt-label">C</span><span class="opt-text" id="textC"></span>
+              </button>
+              <button class="quiz-btn" id="D" onclick="answer('D')">
+                <span class="opt-label">D</span><span class="opt-text" id="textD"></span>
+              </button>
+            </div>
+            <div class="result-msg" id="resultMsg"></div>
+          </div>
+        </div>
+
+        <!-- AI Study Chat -->
+        <div class="card">
+          <div class="card-label">AI Study Chat</div>
+
+          <div class="chat-box" id="chatBox">
+            <div class="bot-msg">
+                Hello 👋 Upload a PDF or ask me anything about your lesson.
+            </div>
+          </div>
+
+          <div class="chat-controls">
+
+            <input type="file" id="pdfUpload" accept="application/pdf">
+
+            <input 
+                type="text" 
+                id="userInput" 
+                placeholder="Ask a question about your lesson..."
+            >
+
+            <button onclick="sendMessage()">Send</button>
+
+            <button onclick="startMic()">🎤</button>
+
+          </div>
+
+          <div id="diagramArea"></div>
+
+          </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
