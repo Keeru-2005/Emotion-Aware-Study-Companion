@@ -1,6 +1,6 @@
 async function generateQuiz(topic){
 
-  const response = await fetch("http://127.0.0.1:5000/ask",{
+  const response = await fetch("http://127.0.0.1:8000/ask",{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({
@@ -52,7 +52,7 @@ async function startLecture(){
 
   try{
 
-    const res = await fetch(`http://127.0.0.1:5000/get_video?topic=${topic}`);
+    const res = await fetch(`http://127.0.0.1:8000/get_video?topic=${topic}`);
     const data = await res.json();
 
     const videoWrap = document.getElementById("videoContainer");
@@ -83,7 +83,7 @@ async function simulateEmotion(){
 
   try{
 
-    const response = await fetch("http://127.0.0.1:5000/detect_emotion");
+    const response = await fetch("http://127.0.0.1:8000/detect_emotion");
 
     const data = await response.json();
 
@@ -108,6 +108,7 @@ async function simulateEmotion(){
     }
 
     updateEmotion(emotion, state, attention);
+    handleEmotionAction(emotion);
 
     async function handleEmotionAction(emotion){
 
@@ -160,7 +161,7 @@ async function generateAIResponse(prompt){
 
   area.innerHTML = "Generating...";
 
-  const response = await fetch("http://127.0.0.1:5000/ask",{
+  const response = await fetch("http://127.0.0.1:8000/ask",{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({ question: prompt })
@@ -240,7 +241,7 @@ async function sendMessage(){
 
     try{
 
-        const response = await fetch("http://127.0.0.1:5000/ask",{
+        const response = await fetch("http://127.0.0.1:8000/ask",{
 
             method:"POST",
 
@@ -283,7 +284,7 @@ async function generateAnswer(question){
 
   try {
 
-    const response = await fetch("http://localhost:5000/ask", {
+    const response = await fetch("http://localhost:8000/ask", {
 
       method: "POST",
 
@@ -412,7 +413,7 @@ const area = document.getElementById("diagramArea");
 
 area.innerHTML="Generating break suggestion...";
 
-const response = await fetch("http://127.0.0.1:5000/ask",{
+const response = await fetch("http://127.0.0.1:8000/ask",{
 
 method:"POST",
 
@@ -430,4 +431,33 @@ const data = await response.json();
 
 area.innerHTML=`<p>${data.answer}</p>`;
 
+}
+
+async function uploadPDF(){
+
+  const file = document.getElementById("pdfUpload").files[0];
+
+  if(!file){
+    alert("Upload a PDF first");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  await fetch("http://127.0.0.1:8000/upload_pdf", {
+    method: "POST",
+    body: formData
+  });
+
+  alert("PDF uploaded!");
+}
+
+async function clearPDF(){
+
+  await fetch("http://127.0.0.1:8000/clear_pdf", {
+    method: "POST"
+  });
+
+  alert("PDF removed!");
 }
