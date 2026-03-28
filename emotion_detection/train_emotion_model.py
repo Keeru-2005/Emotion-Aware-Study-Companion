@@ -60,6 +60,9 @@ model.fit(
 )
 
 # Save model
+import os
+
+os.makedirs("../models", exist_ok=True)
 model.save("../models/emotion_model.h5")
 
 print("Model training complete and saved.")

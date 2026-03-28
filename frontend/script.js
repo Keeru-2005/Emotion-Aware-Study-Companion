@@ -1,25 +1,35 @@
-const quizData = {
-  'Introduction to AI': {
-    question: 'What does AI stand for?',
-    options: ['Artificial Intelligence', 'Automated Input', 'Analytical Interface', 'Augmented Information'],
-    correct: 0
-  },
-  'Machine Learning Basics': {
-    question: 'What is supervised learning?',
-    options: ['Learning from labelled data', 'Learning without data', 'Random guessing', 'Manual programming'],
-    correct: 0
-  },
-  'Neural Networks': {
-    question: 'What is an activation function?',
-    options: ['A network layer', 'A function introducing non-linearity', 'A loss metric', 'A learning rate'],
-    correct: 1
-  },
-  'Data Structures': {
-    question: 'What is RAM?',
-    options: ['Temporary Memory', 'CPU', 'Hard Disk', 'Monitor'],
-    correct: 0
+async function generateQuiz(topic){
+
+  const response = await fetch("http://127.0.0.1:5000/ask",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      question: `Generate a multiple choice question (MCQ) from the topic "${topic}".
+      Give 4 options and mark correct answer clearly in JSON format:
+      {question, options:[], correctIndex}`
+    })
+  });
+
+  const data = await response.json();
+
+  try{
+    const quiz = JSON.parse(data.answer);
+
+    document.getElementById('question').textContent = quiz.question;
+
+    ['A','B','C','D'].forEach((id,i)=>{
+      document.getElementById('text'+id).textContent = quiz.options[i];
+    });
+
+    correctIndex = quiz.correctIndex;
+
+    document.getElementById('quizTrigger').style.display = 'none';
+    document.getElementById('quizSection').classList.add('open');
+
+  }catch{
+    console.log("Parsing error", data.answer);
   }
-};
+}
 
 const emotions = [
   { label: 'Focused',  state: 'Deep learning',   attention: 'High'   },
@@ -34,28 +44,131 @@ let quizAnswered   = false;
 let correctIndex   = -1;
 
 // ── Start lecture ──────────────────────────────────────────────
-function startLecture() {
-  sessionActive = true;
+async function startLecture(){
 
-  const badge = document.getElementById('sessionStatus');
-  badge.textContent = 'Active';
-  badge.classList.add('active');
+  const topic = document.getElementById("topic").value;
 
-  const placeholder = document.getElementById('videoPlaceholder');
-  const video       = document.getElementById('lectureVideo');
-  placeholder.style.display = 'none';
-  video.style.display = 'block';
-  video.play().catch(() => {});
+  console.log("Fetching video for:", topic);
 
-  simulateEmotion();
-  if (emotionInterval) clearInterval(emotionInterval);
-  emotionInterval = setInterval(simulateEmotion, 4000);
+  try{
+
+    const res = await fetch(`http://127.0.0.1:5000/get_video?topic=${topic}`);
+    const data = await res.json();
+
+    const videoWrap = document.getElementById("videoContainer");
+
+    videoWrap.innerHTML = `
+      <iframe width="100%" height="100%"
+        src="${data.videoUrl}"
+        frameborder="0"
+        allowfullscreen>
+      </iframe>
+    `;
+
+    document.getElementById('sessionStatus').textContent = 'Active';
+
+    sessionActive = true;
+
+    simulateEmotion();
+    if (emotionInterval) clearInterval(emotionInterval);
+    emotionInterval = setInterval(simulateEmotion, 4000);
+
+  }catch(err){
+    console.log("Video error:", err);
+  }
 }
 
 // ── Emotion simulation ─────────────────────────────────────────
-function simulateEmotion() {
-  const e = emotions[Math.floor(Math.random() * emotions.length)];
-  updateEmotion(e.label, e.state, e.attention);
+async function simulateEmotion(){
+
+  try{
+
+    const response = await fetch("http://127.0.0.1:5000/detect_emotion");
+
+    const data = await response.json();
+
+    const emotion = data.emotion;
+
+    let state="Steady";
+    let attention="Medium";
+
+    if(emotion==="happy"){
+        state="Focused";
+        attention="High";
+    }
+
+    if(emotion==="sad"){
+        state="Stressed";
+        attention="Low";
+    }
+
+    if(emotion==="fear" || emotion==="surprise"){
+        state="Confused";
+        attention="Low";
+    }
+
+    updateEmotion(emotion, state, attention);
+
+    async function handleEmotionAction(emotion){
+
+    const video = document.querySelector("iframe");
+
+    if(!video) return;
+
+    // 🎯 CONFUSED → explanation
+    if(emotion==="fear" || emotion==="surprise"){
+
+      generateAIResponse(
+       "Explain the current topic in a simple way with analogy and steps."
+    );
+
+}
+
+// 😴 BORED → MCQ
+else if(emotion==="neutral"){
+
+    const topic = document.getElementById("topic").value;
+    generateQuiz(topic);
+
+}
+
+// 😞 STRESSED → break motivation
+else if(emotion==="sad"){
+
+    generateAIResponse(
+      "Give a short motivational break message for a stressed student. Make it inspiring and human."
+    );
+
+}
+
+// 😎 FOCUSED → nothing
+}
+
+  }
+
+  catch{
+
+    updateEmotion("Neutral","Steady","Medium");
+
+  }
+
+}
+
+async function generateAIResponse(prompt){
+
+  const area = document.getElementById("diagramArea");
+
+  area.innerHTML = "Generating...";
+
+  const response = await fetch("http://127.0.0.1:5000/ask",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ question: prompt })
+  });
+
+  const data = await response.json();
+
+  area.innerHTML = `<p>${data.answer}</p>`;
 }
 
 function updateEmotion(emotion, state, attention) {
@@ -80,20 +193,8 @@ function showQuiz() {
   if (quizAnswered) return;
 
   const topic = document.getElementById('topic').value;
-  const data  = quizData[topic];
-  correctIndex = data.correct;
 
-  document.getElementById('question').textContent = data.question;
-
-  const ids = ['A', 'B', 'C', 'D'];
-  ids.forEach((id, i) => {
-    document.getElementById('text' + id).textContent = data.options[i];
-    document.getElementById(id).className = 'quiz-btn';
-  });
-
-  document.getElementById('quizTrigger').style.display = 'none';
-  document.getElementById('quizSection').classList.add('open');
-  document.getElementById('resultMsg').className = 'result-msg';
+  generateQuiz(topic); // ✅ dynamic AI-generated quiz
 }
 
 // ── Answer ─────────────────────────────────────────────────────
@@ -202,6 +303,11 @@ async function generateAnswer(question){
 
     chat.innerHTML += `<div class="bot-msg">${answer}</div>`;
 
+    if(question.toLowerCase().includes("neural")){
+      generateFlowchart();
+    }
+
+
     chat.scrollTop = chat.scrollHeight;
 
   } catch(error){
@@ -266,4 +372,62 @@ document.getElementById("userInput").addEventListener("keypress", function(e) {
   if (e.key === "Enter") {
     sendMessage();
   }
-});
+}); 
+
+function handleEmotionAction(emotion){
+
+const video = document.getElementById("lectureVideo");
+
+if(!video) return;
+
+if(emotion==="fear" || emotion==="surprise"){
+
+    video.pause();
+
+    generateExplanation();
+
+}
+
+else if(emotion==="neutral"){
+
+    video.pause();
+
+    showQuiz();
+
+}
+
+else if(emotion==="sad"){
+
+    video.pause();
+
+    showBreakMessage();
+
+}
+
+}
+
+async function showBreakMessage(){
+
+const area = document.getElementById("diagramArea");
+
+area.innerHTML="Generating break suggestion...";
+
+const response = await fetch("http://127.0.0.1:5000/ask",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+question:"Generate a short motivational break message for a stressed student."
+})
+
+})
+
+const data = await response.json();
+
+area.innerHTML=`<p>${data.answer}</p>`;
+
+}

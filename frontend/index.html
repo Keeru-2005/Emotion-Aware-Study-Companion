@@ -27,7 +27,7 @@
         <div class="card">
           <div class="card-label">Topic</div>
           <div class="topic-row">
-            <select id="topic" onchange="onTopicChange()">
+            <input id="topic" placeholder="Search any topic..." />
               <option>Introduction to AI</option>
               <option>Machine Learning Basics</option>
               <option>Neural Networks</option>
@@ -37,20 +37,9 @@
           </div>
         </div>
 
-        <div class="card video-card">
-          <div class="card-label">Lecture</div>
-          <div class="video-wrap">
-            <div class="video-placeholder" id="videoPlaceholder">
-              <div class="play-icon" onclick="startLecture()">
-                <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                  <path d="M5 3.5L14.5 9 5 14.5V3.5Z" fill="rgba(255,255,255,0.7)"/>
-                </svg>
-              </div>
-              <span class="video-label">Select a topic and press start</span>
-            </div>
-            <video id="lectureVideo" controls>
-              <source src="lecture.mp4" type="video/mp4">
-            </video>
+        <div class="video-wrap" id="videoContainer">
+          <div class="video-placeholder">
+            <span class="video-label">Select a topic and press start</span>
           </div>
         </div>
 
