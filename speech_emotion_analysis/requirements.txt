@@ -5,3 +5,6 @@ sounddevice
 scipy
 joblib
 tensorflow
+speechrecognition
+transformers
+torch

@@ -1,12 +1,23 @@
 import librosa
 import numpy as np
 
-def extract_features(file_path):
+def extract_features(file_path, max_len=130):
     audio, sr = librosa.load(file_path, duration=3, offset=0.5)
-    audio = audio / np.max(np.abs(audio))
-    audio, _ = librosa.effects.trim(audio)
-    mfcc = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=40)
-    chroma = np.mean(librosa.feature.chroma_stft(y=audio, sr=sr).T, axis=0)
-    mel = np.mean(librosa.feature.melspectrogram(y=audio, sr=sr).T, axis=0)
 
-    return np.hstack((mfcc, chroma, mel))
+    # Normalize
+    audio = audio / np.max(np.abs(audio))
+
+    # Trim silence
+    audio, _ = librosa.effects.trim(audio)
+
+    # MFCC (2D)
+    mfcc = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=40)
+
+    # Pad or trim
+    if mfcc.shape[1] < max_len:
+        pad_width = max_len - mfcc.shape[1]
+        mfcc = np.pad(mfcc, ((0, 0), (0, pad_width)))
+    else:
+        mfcc = mfcc[:, :max_len]
+
+    return mfcc

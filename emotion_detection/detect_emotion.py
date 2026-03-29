@@ -2,9 +2,17 @@ import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
 
+from tensorflow.keras.layers import Dense
 
+old_init = Dense.__init__
+
+def new_init(self, *args, **kwargs):
+    kwargs.pop("quantization_config", None)
+    old_init(self, *args, **kwargs)
+
+Dense.__init__ = new_init
 # Load trained model
-model = load_model("../models/emotion_model.h5")
+model = load_model("emotion_model.h5", compile=False)
 
 # Emotion labels (same order as training)
 emotion_labels = [

@@ -1,5 +1,5 @@
 DATA_PATH = "data/final"
-MODEL_PATH = "models/emotion_model.pkl"
+MODEL_PATH = "models/cnn_model.h5"
 
 EMOTION_MAP = {
     "01": "neutral",

@@ -1,4 +1,4 @@
-import os
+import os, numpy as np
 from src.feature_extraction import extract_features
 from src.config import EMOTION_MAP
 
@@ -22,4 +22,10 @@ def load_dataset(data_path):
                 X.append(features)
                 y.append(emotion)
 
+    # 🔥 FIX STARTS HERE
+    X = np.array(X)
+    y = np.array(y)
+
+    # Add channel dimension for CNN
+    X = X[..., np.newaxis]
     return X, y
