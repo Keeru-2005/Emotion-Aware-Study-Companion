@@ -1,0 +1,10 @@
+numpy
+librosa
+scikit-learn
+sounddevice
+scipy
+joblib
+tensorflow
+speechrecognition
+transformers
+torch

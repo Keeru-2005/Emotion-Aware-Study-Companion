@@ -1,0 +1,13 @@
+DATA_PATH = "data/final"
+MODEL_PATH = "models/cnn_model.h5"
+
+EMOTION_MAP = {
+    "01": "neutral",
+    "02": "calm",
+    "03": "happy",
+    "04": "sad",
+    "05": "angry",
+    "06": "fearful",
+    "07": "disgust",
+    "08": "surprised"
+}
