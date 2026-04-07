@@ -7,9 +7,17 @@ import os
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "..", "models", "emotion_model.h5")
 
-print("Loading model from:", MODEL_PATH)
+from tensorflow.keras.layers import Dense
 
-model = load_model(MODEL_PATH)
+old_init = Dense.__init__
+
+def new_init(self, *args, **kwargs):
+    kwargs.pop("quantization_config", None)
+    old_init(self, *args, **kwargs)
+
+Dense.__init__ = new_init
+# Load trained model
+model = load_model("emotion_model.h5", compile=False)
 
 emotion_labels = [
     "Angry","Disgust","Fear","Happy",
