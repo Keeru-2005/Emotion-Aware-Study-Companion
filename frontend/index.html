@@ -27,19 +27,64 @@
         <div class="card">
           <div class="card-label">Topic</div>
           <div class="topic-row">
-            <input id="topic" placeholder="Search any topic..." />
-              <option>Introduction to AI</option>
-              <option>Machine Learning Basics</option>
-              <option>Neural Networks</option>
-              <option>Data Structures</option>
-            </select>
+            <input id="topic" placeholder="Enter any topic…" />
             <button class="btn-primary" onclick="startLecture()">Start learning</button>
           </div>
         </div>
 
-        <div class="video-wrap" id="videoContainer">
-          <div class="video-placeholder">
-            <span class="video-label">Select a topic and press start</span>
+        <!-- Video area -->
+        <div class="video-outer">
+          <div class="video-wrap" id="videoContainer">
+            <div class="video-placeholder" id="videoPlaceholder">
+              <div class="ph-icon">▶</div>
+              <span class="video-label">Enter a topic and press Start learning</span>
+            </div>
+          </div>
+
+          <!-- ── BORED / PAUSED MCQ OVERLAY ── -->
+          <div class="pause-overlay" id="pauseOverlay">
+            <div class="po-card">
+
+              <div class="po-header">
+                <div class="po-badge">😐 Looks like you paused!</div>
+                <p class="po-sub">Quick check on what you've learned so far</p>
+              </div>
+
+              <!-- Progress dots -->
+              <div class="po-dots">
+                <div class="po-dot active" id="dot0"></div>
+                <div class="po-dot" id="dot1"></div>
+              </div>
+
+              <!-- Q1 -->
+              <div class="po-quiz" id="poQuiz0">
+                <p class="po-qnum">Question 1 of 2</p>
+                <p class="po-question" id="poQ0"></p>
+                <div class="po-options" id="poOpts0"></div>
+                <div class="po-result" id="poRes0"></div>
+              </div>
+
+              <!-- Q2 -->
+              <div class="po-quiz" id="poQuiz1" style="display:none">
+                <p class="po-qnum">Question 2 of 2</p>
+                <p class="po-question" id="poQ1"></p>
+                <div class="po-options" id="poOpts1"></div>
+                <div class="po-result" id="poRes1"></div>
+              </div>
+
+              <!-- Loading state -->
+              <div class="po-loading" id="poLoading">
+                <div class="po-spinner"></div>
+                <span>Generating questions from your lecture…</span>
+              </div>
+
+              <!-- Done state -->
+              <div class="po-done" id="poDone" style="display:none">
+                <div class="po-done-icon">🎉</div>
+                <p>Great job! Resuming your lecture…</p>
+              </div>
+
+            </div>
           </div>
         </div>
 
@@ -71,14 +116,18 @@
           </div>
         </div>
 
-        <!-- Quiz -->
+        <!-- Emotion action card -->
+        <div class="card" id="emotionActionCard" style="display:none">
+          <div class="card-label" id="actionCardLabel">System Action</div>
+          <div id="actionCardBody"></div>
+        </div>
+
+        <!-- Manual Quiz -->
         <div class="card">
           <div class="card-label">Quick check</div>
-
           <div id="quizTrigger">
-            <button class="show-quiz-btn" onclick="showQuiz()">Launch quiz for this topic →</button>
+            <button class="show-quiz-btn" onclick="showQuiz()">Generate quiz for this topic →</button>
           </div>
-
           <div class="quiz-section" id="quizSection">
             <p class="quiz-q" id="question"></p>
             <div class="quiz-options">
@@ -102,37 +151,26 @@
         <!-- AI Study Chat -->
         <div class="card">
           <div class="card-label">AI Study Chat</div>
-
           <div class="chat-box" id="chatBox">
-            <div class="bot-msg">
-                Hello 👋 Upload a PDF or ask me anything about your lesson.
-            </div>
+            <div class="bot-msg">Hello 👋 Upload a PDF or ask me anything about your lesson.</div>
           </div>
-
           <div class="chat-controls">
-
-            <input type="file" id="pdfUpload" accept="application/pdf">
-
-            <input 
-                type="text" 
-                id="userInput" 
-                placeholder="Ask a question about your lesson..."
-            >
-
+            <input type="file" id="pdfUpload" accept="application/pdf" style="display:none">
+            <input type="text" id="userInput" placeholder="Ask a question…" onkeypress="if(event.key==='Enter') sendMessage()">
             <button onclick="sendMessage()">Send</button>
-
             <button onclick="startMic()">🎤</button>
-
+            <button onclick="document.getElementById('pdfUpload').click()">📄 PDF</button>
+            <button onclick="clearPDF()">✕ PDF</button>
           </div>
-
           <div id="diagramArea"></div>
-
-          </div>
+        </div>
 
       </div>
     </div>
   </div>
 
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script src="script.js"></script>
 </body>
 </html>
