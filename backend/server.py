@@ -1,15 +1,23 @@
-from emotion_detection.detect_emotion import detect_emotion_from_camera
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from google import genai
+from dotenv import load_dotenv
+import google.generativeai as genai
+import PyPDF2
 import os
 import requests
+import random
 
-client = genai.Client(api_key="AIzaSyAWeb8aN5g91TSNBO6pC0eXHW-x4mj_Fz4")
+# from emotion_detection.detect_emotion import detect_emotion_from_camera
+
+load_dotenv()
+GEMINI_API_KEY  = os.getenv("AIzaSyDns17V2cod-rtPz8ILzrqTZfpenMLyvT0")
+YOUTUBE_API_KEY = os.getenv("AIzaSyCp4EHRPz4pYpcZJkHfT45l2CCgirkVun0")
+
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel("gemini-2.5-flash")
 
 app = FastAPI()
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -18,49 +26,140 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+pdf_text = ""
+
 class Question(BaseModel):
     question: str
 
+
+# ───── CHATBOT ─────
 @app.post("/ask")
 def ask_ai(q: Question):
+    global pdf_text
+    prompt = f"""
+You are a helpful study assistant.
+If the question is related to the PDF content below, use it.
+Otherwise answer normally.
+
+PDF Content:
+{pdf_text[:3000]}
+
+Question: {q.question}
+"""
     try:
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=q.question
-        )
+        response = model.generate_content(prompt)
         return {"answer": response.text}
     except Exception as e:
         return {"answer": str(e)}
 
+
+# ───── PDF ─────
+@app.post("/upload_pdf")
+async def upload_pdf(file: UploadFile = File(...)):
+    global pdf_text
+    reader = PyPDF2.PdfReader(file.file)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text() or ""
+    pdf_text = text
+    return {"message": "PDF uploaded"}
+
+@app.post("/clear_pdf")
+def clear_pdf():
+    global pdf_text
+    pdf_text = ""
+    return {"message": "PDF cleared"}
+
+
+# ───── EMOTION DETECTION ─────
+# Returns simulated emotions in rotation for demo purposes.
+# To use real camera detection, uncomment the import at top
+# and replace the body with: emotion = detect_emotion_from_camera()
+
+emotion_cycle = ["happy", "happy", "happy", "neutral", "happy", "sad", "happy", "fear"]
+emotion_index = 0
+
 @app.get("/detect_emotion")
 def detect_emotion():
+    global emotion_index
 
-    emotion = detect_emotion_from_camera()
+    # ── SIMULATED (cycles through emotions for demo) ──
+    # Change this list to control which emotions fire during testing:
+    # "happy"   → Focused  (no action)
+    # "neutral" → Bored    (pause + MCQ)
+    # "sad"     → Stressed (break message)
+    # "fear"    → Confused (explanation)
+    emotion = emotion_cycle[emotion_index % len(emotion_cycle)]
+    emotion_index += 1
+    return {"emotion": emotion}
 
-    if emotion in ["Sad", "Disgust"]:
-        state = "bored"
-    elif emotion in ["Fear", "Angry"]:
-        state = "stressed"
-    elif emotion == "Surprise":
-        state = "confused"
-    else:
-        state = "focused"
+    # ── REAL camera (uncomment when ready) ──
+    # emotion = detect_emotion_from_camera()
+    # return {"emotion": emotion}
 
-    return {"emotion": state}
 
-YOUTUBE_API_KEY = os.getenv("AIzaSyDwmv-h2yFibyBWYtc8XXuXAHCIDCFOEBM")
-
+# ───── YOUTUBE VIDEO ─────
 @app.get("/get_video")
 def get_video(topic: str):
-
     try:
-        url = f"https://www.googleapis.com/youtube/v3/search?part=snippet&q={topic} lecture&type=video&key={YOUTUBE_API_KEY}"
+        # Simple, direct search query — no AI filtering that drops results
+        search_query = f"{topic} lecture tutorial explained"
 
-        res = requests.get(url).json()
+        url = (
+            f"https://www.googleapis.com/youtube/v3/search"
+            f"?part=snippet"
+            f"&q={requests.utils.quote(search_query)}"
+            f"&type=video"
+            f"&videoCategoryId=27"   # Education category
+            f"&maxResults=10"
+            f"&relevanceLanguage=en"
+            f"&key={YOUTUBE_API_KEY}"
+        )
 
-        video_id = res['items'][0]['id']['videoId']
+        res  = requests.get(url).json()
+        items = res.get("items", [])
 
+        if not items:
+            # Fallback: search without category filter
+            url2 = (
+                f"https://www.googleapis.com/youtube/v3/search"
+                f"?part=snippet"
+                f"&q={requests.utils.quote(search_query)}"
+                f"&type=video"
+                f"&maxResults=10"
+                f"&key={YOUTUBE_API_KEY}"
+            )
+            res   = requests.get(url2).json()
+            items = res.get("items", [])
+
+        if not items:
+            return {"videoUrl": "https://www.youtube.com/embed/aircAruvnKk"}
+
+        # ── Score videos by relevance ──
+        # Prefer videos whose title contains the topic keywords
+        topic_words = topic.lower().split()
+
+        def score(item):
+            title = item["snippet"]["title"].lower()
+            desc  = item["snippet"]["description"].lower()
+            s = 0
+            for word in topic_words:
+                if word in title: s += 3
+                if word in desc:  s += 1
+            # Bonus for educational keywords
+            for kw in ["lecture", "tutorial", "explained", "introduction", "course", "learn"]:
+                if kw in title: s += 2
+            # Penalty for clearly off-topic content
+            for bad in ["song", "music", "trailer", "movie", "funny", "meme", "vlog"]:
+                if bad in title: s -= 5
+            return s
+
+        scored = sorted(items, key=score, reverse=True)
+        video_id = scored[0]["id"]["videoId"]
+
+        print(f"Topic: {topic} → Video: {scored[0]['snippet']['title']}")
         return {"videoUrl": f"https://www.youtube.com/embed/{video_id}"}
 
-    except:
-        return {"videoUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ"}
+    except Exception as e:
+        print("Video error:", e)
+        return {"videoUrl": "https://www.youtube.com/embed/aircAruvnKk"}
