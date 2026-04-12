@@ -17,7 +17,7 @@ def new_init(self, *args, **kwargs):
 
 Dense.__init__ = new_init
 # Load trained model
-model = load_model("emotion_model.h5", compile=False)
+model = load_model(MODEL_PATH, compile=False)
 
 emotion_labels = [
     "Angry","Disgust","Fear","Happy",
